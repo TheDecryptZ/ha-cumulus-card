@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cumulus Card – démo en ligne</title>
+<meta name="description" content="Démo interactive de Cumulus Card, la carte Lovelace pour piloter et suivre un cumulus dans Home Assistant.">
+<style>
+  :root {
+    --primary-text-color: #212121; --secondary-text-color: #727272; --divider-color: #e0e0e0;
+    --secondary-background-color: #f1f1f1; --primary-color: #03a9f4; --warning-color: #ff9800;
+    --error-color: #db4437; --card-background-color: #ffffff; --page-bg: #eceff1; --panel-bg: #ffffff;
+    --disabled-text-color: #9e9e9e; --switch-unchecked-track-color: #9e9e9e;
+  }
+  body.dark {
+    --primary-text-color: #e1e1e1; --secondary-text-color: #9b9b9b; --divider-color: #3a3a3a;
+    --secondary-background-color: #2b2b2b; --card-background-color: #1c1c1c; --page-bg: #111111;
+    --panel-bg: #1c1c1c; --disabled-text-color: #6f6f6f; --switch-unchecked-track-color: #6f6f6f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Roboto, "Segoe UI", Arial, sans-serif; background: var(--page-bg);
+    color: var(--primary-text-color); transition: background .2s; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+  h1 { margin: 0; font-size: 1.5rem; font-weight: 500; }
+  header p { margin: 4px 0 0; color: var(--secondary-text-color); font-size: .9rem; }
+  a { color: var(--primary-color); }
+  .layout { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 24px; align-items: start; }
+  @media (max-width: 760px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+  .layout > * { min-width: 0; }
+  .panel { background: var(--panel-bg); border-radius: 12px; padding: 16px; margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+  .panel h2 { margin: 0 0 10px; font-size: .8rem; font-weight: 500; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--secondary-text-color); }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .row-label { width: 100%; margin: 6px 0 -2px; font-size: .8rem; color: var(--secondary-text-color); }
+  button.b { font: inherit; font-size: .9rem; padding: 8px 14px; border-radius: 18px; cursor: pointer;
+    border: 1px solid var(--divider-color); background: transparent; color: var(--primary-text-color);
+    transition: background .15s, border-color .15s; }
+  button.b:hover { border-color: var(--primary-color); }
+  button.b[aria-pressed="true"] { background: var(--primary-color); border-color: var(--primary-color); color: #fff; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
+  .hint { font-size: .85rem; color: var(--secondary-text-color); line-height: 1.5; margin: 0; }
+  pre { margin: 0; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: .8rem;
+    background: var(--secondary-background-color); color: var(--primary-text-color); }
+  .note { font-size: .8rem; color: var(--secondary-text-color); margin-top: 8px; }
+  footer { margin-top: 24px; font-size: .85rem; color: var(--secondary-text-color); text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Cumulus Card</h1>
+      <p>Démo interactive : un faux Home Assistant, sans aucune connexion à votre installation.</p>
+    </div>
+    <div class="btns">
+      <button class="b" id="theme" aria-pressed="false">Thème sombre</button>
+      <a class="b" style="text-decoration:none;display:inline-block" href="https://github.com/TheDecryptZ/ha-cumulus-card">Dépôt GitHub</a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div id="stage"></div>
+
+    <div>
+      <div class="panel">
+        <h2>Scénarios</h2>
+        <div class="btns" id="scenarios">
+          <button class="b" data-scenario="off">Arrêté</button>
+          <button class="b" data-scenario="heating">Chauffe en cours</button>
+          <button class="b" data-scenario="force">Marche forcée (compte à rebours)</button>
+          <button class="b" data-scenario="force-end">Fin de marche forcée (10 s)</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Couleurs Tempo</h2>
+        <div class="btns" id="tempo">
+          <span class="row-label">Aujourd'hui</span>
+          <button class="b" data-day="today" data-color="BLUE"><span class="dot" style="background:#1e88e5"></span>Bleu</button>
+          <button class="b" data-day="today" data-color="WHITE"><span class="dot" style="background:#f5f5f5"></span>Blanc</button>
+          <button class="b" data-day="today" data-color="RED"><span class="dot" style="background:#e53935"></span>Rouge</button>
+          <span class="row-label">Demain</span>
+          <button class="b" data-day="tomorrow" data-color="BLUE"><span class="dot" style="background:#1e88e5"></span>Bleu</button>
+          <button class="b" data-day="tomorrow" data-color="WHITE"><span class="dot" style="background:#f5f5f5"></span>Blanc</button>
+          <button class="b" data-day="tomorrow" data-color="RED"><span class="dot" style="background:#e53935"></span>Rouge</button>
+          <button class="b" data-day="tomorrow" data-color="Inconnu"><span class="dot" style="background:#9e9e9e"></span>Inconnu</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Essayez la carte</h2>
+        <p class="hint">Le bouton rond allume ou éteint le cumulus, et l'interrupteur « Marche forcée » lance ou annule le minuteur de 3 h,
+          comme avec l'automatisation décrite dans le README. Un clic sur une tuile ouvrirait normalement la fiche de l'entité :
+          ici, il est affiché dans le journal ci-dessous.</p>
+        <pre id="log">En attente d'une action…</pre>
+      </div>
+
+      <div class="panel">
+        <h2>Configuration</h2>
+        <pre>type: custom:cumulus-card</pre>
+        <p class="note">Les entités par défaut sont celles du README ; tout se règle aussi depuis l'éditeur visuel de Home Assistant.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>Données simulées · <a href="https://github.com/TheDecryptZ/ha-cumulus-card#readme">Installation et documentation</a> · Licence MIT</footer>
+</main>
+
+<script>
+/* Substitut minimal de <ha-card>, fourni normalement par Home Assistant. */
+customElements.define("ha-card", class extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" }).innerHTML =
+      "<style>:host{display:block;background:var(--card-background-color);border-radius:12px;" +
+      "box-shadow:0 2px 4px rgba(0,0,0,.14),0 1px 3px rgba(0,0,0,.2);color:var(--primary-text-color)}</style><slot></slot>";
+  }
+});
+</script>
+<script src="./ha-cumulus-card.js"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const st = (state, attributes = {}) => ({ state, attributes });
+  const FORCE_TOTAL_S = 3 * 3600;
+
+  /* ---------------------------- faux état ---------------------------- */
+  const model = {
+    heating: false,
+    force: false,
+    finishesAt: null,
+    today: "BLUE",
+    tomorrow: "Inconnu",
+    scenario: "off",
+  };
+
+  function buildStates() {
+    const on = model.heating;
+    const finishes = model.finishesAt ? new Date(model.finishesAt).toISOString() : null;
+    return {
+      "switch.cumulus": st(on ? "on" : "off"),
+      "sensor.cumulus_power": st(on ? "2194" : "0", { unit_of_measurement: "W" }),
+      "sensor.cumulus_voltage": st("236", { unit_of_measurement: "V" }),
+      "sensor.cumulus_current": st(on ? "9.3" : "0", { unit_of_measurement: "A" }),
+      "sensor.cumulus_energy": st("971.19", { unit_of_measurement: "kWh" }),
+      "input_boolean.marche_forcee_cumulus": st(model.force ? "on" : "off"),
+      "timer.cumulus_marche_forcee": model.force && finishes
+        ? st("active", { duration: "3:00:00", finishes_at: finishes })
+        : st("idle", { duration: "3:00:00" }),
+      "sensor.cout_cumulus_jour": st(on ? "0.31" : "0", { unit_of_measurement: "€" }),
+      "sensor.cout_cumulus_mois": st("9.5462", { unit_of_measurement: "€" }),
+      "sensor.cout_cumulus_cycle": st("12.8033", { unit_of_measurement: "€" }),
+      "input_datetime.cumulus_derniere_chauffe": st(lastHeat()),
+      "sensor.myelectricaldata_tempo_today": st(model.today),
+      "sensor.myelectricaldata_tempo_tomorrow": st(model.tomorrow),
+      "automation.gestion_cumulus_tempo_rte_dev": st("on"),
+    };
+  }
+
+  // « Hier à 05:20 », toujours relatif à aujourd'hui.
+  function lastHeat() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} 05:20:00`;
+  }
+
+  /* ---------------------------- faux hass ---------------------------- */
+  const logEl = $("#log");
+  function log(line) {
+    const t = new Date().toLocaleTimeString("fr-FR");
+    logEl.textContent = `${t}  ${line}`;
+  }
+
+  function callService(domain, service, data) {
+    const id = data && data.entity_id;
+    if (domain === "homeassistant" && service === "toggle" && id === "switch.cumulus") {
+      model.heating = !model.heating;
+      log(`homeassistant.toggle → switch.cumulus (${model.heating ? "on" : "off"})`);
+    } else if (domain === "input_boolean" && service === "toggle" && id === "input_boolean.marche_forcee_cumulus") {
+      model.force = !model.force;
+      model.finishesAt = model.force ? Date.now() + FORCE_TOTAL_S * 1000 : null;
+      // L'automatisation d'origine allume le cumulus pendant la marche forcée.
+      if (model.force) model.heating = true;
+      log(`input_boolean.toggle → marche forcée (${model.force ? "on, minuteur 3 h démarré" : "off, minuteur annulé"})`);
+    } else {
+      log(`${domain}.${service} ${JSON.stringify(data)}`);
+    }
+    model.scenario = null;
+    refresh();
+  }
+
+  function makeHass() {
+    return {
+      states: buildStates(),
+      language: "fr",
+      locale: { language: "fr" },
+      callService,
+    };
+  }
+
+  /* ----------------------------- la carte ---------------------------- */
+  const card = document.createElement("cumulus-card");
+  card.setConfig({ type: "custom:cumulus-card" });
+  card.addEventListener("hass-more-info", (ev) => log(`more-info → ${ev.detail.entityId}`));
+  $("#stage").appendChild(card);
+
+  function refresh() {
+    card.hass = makeHass();
+    $$("#scenarios button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.scenario === model.scenario)));
+    $$("#tempo button").forEach((b) => {
+      const current = b.dataset.day === "today" ? model.today : model.tomorrow;
+      b.setAttribute("aria-pressed", String(current.toLowerCase() === b.dataset.color.toLowerCase()));
+    });
+  }
+
+  /* ---------------------------- scénarios ---------------------------- */
+  function applyScenario(name) {
+    model.scenario = name;
+    if (name === "off") {
+      Object.assign(model, { heating: false, force: false, finishesAt: null });
+    } else if (name === "heating") {
+      Object.assign(model, { heating: true, force: false, finishesAt: null });
+    } else if (name === "force") {
+      // 45 min déjà écoulées : il reste 2 h 15 min.
+      Object.assign(model, { heating: true, force: true, finishesAt: Date.now() + (FORCE_TOTAL_S - 45 * 60) * 1000 });
+    } else if (name === "force-end") {
+      Object.assign(model, { heating: true, force: true, finishesAt: Date.now() + 10 * 1000 });
+    }
+    log(`scénario : ${$(`[data-scenario="${name}"]`).textContent}`);
+    refresh();
+  }
+
+  $("#scenarios").addEventListener("click", (ev) => {
+    const b = ev.target.closest("button[data-scenario]");
+    if (b) applyScenario(b.dataset.scenario);
+  });
+
+  $("#tempo").addEventListener("click", (ev) => {
+    const b = ev.target.closest("button[data-color]");
+    if (!b) return;
+    model[b.dataset.day] = b.dataset.color;
+    log(`Tempo ${b.dataset.day === "today" ? "aujourd'hui" : "demain"} : ${b.dataset.color}`);
+    refresh();
+  });
+
+  /* Comme l'automatisation « fin de la marche forcée après 3 h » : à l'échéance, le booléen repasse à off. */
+  setInterval(() => {
+    if (model.force && model.finishesAt && Date.now() >= model.finishesAt) {
+      model.force = false;
+      model.finishesAt = null;
+      if (model.scenario === "force-end" || model.scenario === "force") model.scenario = null;
+      log("Minuteur terminé → marche forcée coupée (le cumulus reprend son programme)");
+      refresh();
+    }
+  }, 500);
+
+  /* ------------------------------ thème ------------------------------ */
+  const themeBtn = $("#theme");
+  function setTheme(dark) {
+    document.body.classList.toggle("dark", dark);
+    themeBtn.setAttribute("aria-pressed", String(dark));
+    themeBtn.textContent = dark ? "Thème clair" : "Thème sombre";
+  }
+  themeBtn.addEventListener("click", () => setTheme(!document.body.classList.contains("dark")));
+  setTheme(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+  applyScenario("off");
+  log("Démo prête : choisissez un scénario ou cliquez sur la carte.");
+})();
+</script>
+</body>
+</html>

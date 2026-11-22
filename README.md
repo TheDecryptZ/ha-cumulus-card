@@ -4,6 +4,8 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Personnalisé-orange.svg)](https://hacs.xyz)
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 
+**[▶ Démo en ligne](https://thedecryptz.github.io/ha-cumulus-card/)** : essayez la carte dans un faux Home Assistant, sans rien installer.
+
 Carte Lovelace pour **piloter et suivre un cumulus (chauffe-eau)** dans Home Assistant, pensée pour une chauffe programmée une nuit sur deux en heures creuses avec les couleurs **Tempo** EDF.
 
 | Cumulus arrêté | Chauffe + marche forcée | Thème sombre |
@@ -120,9 +122,10 @@ show_tempo: true
 node --check ha-cumulus-card.js      # contrôle de syntaxe
 pip install playwright && playwright install chromium
 python3 test/run.py                  # tests de rendu, d'actions, de logique et d'éditeur
+python3 test/demo_test.py            # tests de la page de démo (index.html)
 ```
 
-Le test génère aussi les captures d'écran du dossier `docs/`. La validation HACS est exécutée par GitHub Actions (`.github/workflows/validate.yml`).
+`test/run.py` génère aussi les captures d'écran du dossier `docs/`. La page de démo (`index.html`, publiée avec GitHub Pages, branche `main`, dossier racine) se teste aussi en local avec `python3 -m http.server`. La validation HACS est exécutée par GitHub Actions (`.github/workflows/validate.yml`).
 
 ## Licence
 
