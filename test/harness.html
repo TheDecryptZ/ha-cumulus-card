@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<style>
+  :root { --primary-text-color:#212121; --secondary-text-color:#727272; --divider-color:#e0e0e0;
+    --secondary-background-color:#f1f1f1; --primary-color:#03a9f4; --warning-color:#ff9800; --error-color:#db4437;
+    --card-background-color:#fff; }
+  body { font-family: Roboto, Arial, sans-serif; background:#f3f3f3; margin:0; padding:24px; }
+  body.dark { background:#111; --primary-text-color:#e1e1e1; --secondary-text-color:#9b9b9b; --divider-color:#3a3a3a;
+    --secondary-background-color:#2b2b2b; --card-background-color:#1c1c1c; }
+  ha-card { display:block; background:var(--card-background-color); border-radius:12px;
+    box-shadow:0 2px 4px rgba(0,0,0,.14), 0 1px 3px rgba(0,0,0,.2); }
+  #wrap { width: 420px; }
+</style></head>
+<body><div id="wrap"></div>
+<script>
+customElements.define('ha-card', class extends HTMLElement {
+  constructor(){ super(); this.attachShadow({mode:'open'}).innerHTML =
+   '<style>:host{display:block;background:var(--card-background-color);border-radius:12px;box-shadow:0 2px 4px rgba(0,0,0,.14),0 1px 3px rgba(0,0,0,.2);color:var(--primary-text-color)}</style><slot></slot>'; }
+});
+</script>
+<script src="../ha-cumulus-card.js"></script>
+<script>
+window.__calls = [];
+window.makeHass = function (over = {}) {
+  const now = Date.now();
+  const st = (state, attributes = {}) => ({ state, attributes });
+  const states = {
+    "switch.cumulus": st("off"),
+    "sensor.cumulus_power": st("0", { unit_of_measurement: "W" }),
+    "sensor.cumulus_voltage": st("236", { unit_of_measurement: "V" }),
+    "sensor.cumulus_current": st("0", { unit_of_measurement: "A" }),
+    "sensor.cumulus_energy": st("971.19", { unit_of_measurement: "kWh" }),
+    "input_boolean.marche_forcee_cumulus": st("off"),
+    "timer.cumulus_marche_forcee": st("idle", { duration: "3:00:00" }),
+    "sensor.cout_cumulus_jour": st("0", { unit_of_measurement: "€" }),
+    "sensor.cout_cumulus_mois": st("9.5462", { unit_of_measurement: "€" }),
+    "sensor.cout_cumulus_cycle": st("12.8033", { unit_of_measurement: "€" }),
+    "input_datetime.cumulus_derniere_chauffe": st("2026-11-21 05:20:00"),
+    "sensor.myelectricaldata_tempo_today": st("BLUE"),
+    "sensor.myelectricaldata_tempo_tomorrow": st("Inconnu"),
+    "automation.gestion_cumulus_tempo_rte_dev": st("on"),
+    ...(over.states || {}),
+  };
+  return { states, language: "fr", locale: { language: "fr" },
+    callService: (d, s, data) => window.__calls.push([d, s, data]) };
+};
+window.mount = function (config, hass) {
+  const wrap = document.getElementById("wrap");
+  wrap.innerHTML = "";
+  const card = document.createElement("cumulus-card");
+  card.setConfig(config);
+  wrap.appendChild(card);
+  card.hass = hass;
+  return card;
+};
+</script></body></html>
