@@ -45,10 +45,16 @@ with sync_playwright() as p:
     # Interrupteur de la carte -> modifie le faux état
     click_card(page, "[data-action=toggle-force]")
     t = txt(page)
-    check("interrupteur carte : marche forcée coupée", "Désactivée" in t, t[:200])
+    check("interrupteur carte : marche forcée coupée (sans confirmation)", "Désactivée" in t, t[:200])
     click_card(page, "[data-action=toggle-force]")
     t = txt(page)
-    check("interrupteur carte : marche forcée relancée (2 h 59/3 h)", "Active" in t and ("2 h 59 min" in t or "3 h 00 min" in t), t)
+    check("relance : confirmation demandée, rien n'est lancé", "Lancer la marche forcée ?" in t and "Active" not in t, t[:200])
+    click_card(page, "[data-action=cancel-force]")
+    check("annuler : marche forcée toujours désactivée", "Désactivée" in txt(page))
+    click_card(page, "[data-action=toggle-force]")
+    click_card(page, "[data-action=confirm-force]")
+    t = txt(page)
+    check("confirmer : marche forcée relancée (2 h 59/3 h)", "Active" in t and ("2 h 59 min" in t or "3 h 00 min" in t), t)
 
     # Bouton rond
     page.click('[data-scenario="off"]')

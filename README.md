@@ -16,7 +16,7 @@ Carte Lovelace pour **piloter et suivre un cumulus (chauffe-eau)** dans Home Ass
 
 - **État et bouton on/off** du cumulus (un clic sur le titre ouvre la fiche de l'entité).
 - **Mesures** : puissance, tension, courant et énergie cumulée.
-- **Marche forcée** : interrupteur, durée restante en direct et barre de progression (3 h par défaut).
+- **Marche forcée** : interrupteur avec confirmation avant le lancement, durée restante en direct et barre de progression (3 h par défaut).
 - **Coûts** : jour, mois et cycle.
 - **Dernière chauffe** (relative : « Hier à 05:20 ») et **prochaine chauffe programmée**, calculée comme l'automatisation (une nuit sur deux, 22:01 → 06:00).
 - **Couleurs Tempo** d'aujourd'hui et de demain (bleu, blanc, rouge, inconnu).
@@ -69,6 +69,7 @@ energy: sensor.cumulus_energy
 force_boolean: input_boolean.marche_forcee_cumulus
 force_timer: timer.cumulus_marche_forcee
 force_duration: 3            # heures, utilisé si le minuteur n'expose pas sa durée
+confirm_force: true          # confirmation avant de lancer la marche forcée
 
 # Coûts
 cost_day: sensor.cout_cumulus_jour
@@ -102,6 +103,7 @@ show_tempo: true
 | `force_boolean` | `input_boolean.marche_forcee_cumulus` | Booléen de marche forcée (interrupteur de la carte). |
 | `force_timer` | `timer.cumulus_marche_forcee` | Minuteur donnant le temps restant. |
 | `force_duration` | `3` | Durée en heures si le minuteur n'expose pas `duration`. |
+| `confirm_force` | `true` | Demande une confirmation (Confirmer / Annuler, annulation automatique après 10 s) avant de lancer la marche forcée. L'arrêt reste immédiat. `false` pour la désactiver. |
 | `cost_day`, `cost_month`, `cost_cycle` | voir ci-dessus | Capteurs de coût ; laisser vide pour masquer une tuile. |
 | `last_heat` | `input_datetime.cumulus_derniere_chauffe` | Date et heure de la dernière chauffe. |
 | `automation` | `automation.gestion_cumulus_tempo_rte_dev` | Automatisation de gestion (affiche « désactivée » si elle est coupée). |

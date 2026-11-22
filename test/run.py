@@ -38,12 +38,41 @@ async def main():
         check("bouton on/off appelle homeassistant.toggle(switch.cumulus)",
               calls == [["homeassistant", "toggle", {"entity_id": "switch.cumulus"}]], calls)
 
-        # 3. Clic marche forcée
+        # 3. Marche forcée : confirmation obligatoire avant le lancement
+        sr = "document.querySelector('cumulus-card').shadowRoot"
         await page.evaluate("window.__calls.length = 0")
-        await page.evaluate("document.querySelector('cumulus-card').shadowRoot.querySelector('[data-action=toggle-force]').click()")
+        await page.evaluate(sr + ".querySelector('[data-action=toggle-force]').click()")
+        check("marche forcée : un clic n'appelle aucun service", await page.evaluate("window.__calls.length") == 0)
+        t = await text(page)
+        check("marche forcée : demande de confirmation affichée", "Lancer la marche forcée ?" in t and "Confirmer" in t and "Annuler" in t, t[:200])
+        await page.evaluate(sr + ".querySelector('[data-action=cancel-force]').click()")
+        check("annuler : aucun appel, retour à l'interrupteur",
+              await page.evaluate("window.__calls.length") == 0 and "Lancer la marche forcée ?" not in await text(page))
+        await page.evaluate(sr + ".querySelector('[data-action=toggle-force]').click()")
+        await page.evaluate(sr + ".querySelector('[data-action=confirm-force]').click()")
         calls = await page.evaluate("window.__calls")
-        check("interrupteur marche forcée appelle input_boolean.toggle",
+        check("confirmer : input_boolean.toggle appelé",
               calls == [["input_boolean", "toggle", {"entity_id": "input_boolean.marche_forcee_cumulus"}]], calls)
+        # annulation automatique après 10 s
+        await page.evaluate("window.__calls.length = 0")
+        await page.evaluate(sr + ".querySelector('[data-action=toggle-force]').click()")
+        await page.wait_for_timeout(10300)
+        check("confirmation oubliée : annulée après 10 s, aucun appel",
+              "Lancer la marche forcée ?" not in await text(page) and await page.evaluate("window.__calls.length") == 0)
+        # option désactivée
+        await page.evaluate("mount({type:'custom:cumulus-card', confirm_force:false}, makeHass())")
+        await page.evaluate("window.__calls.length = 0")
+        await page.evaluate(sr + ".querySelector('[data-action=toggle-force]').click()")
+        check("confirm_force: false : appel immédiat", await page.evaluate("window.__calls.length") == 1)
+        # arrêt : jamais de confirmation
+        await page.evaluate("""() => mount(%s, makeHass({states:{'input_boolean.marche_forcee_cumulus': {state:'on', attributes:{}},
+            'timer.cumulus_marche_forcee': {state:'active', attributes:{duration:'3:00:00', finishes_at:new Date(Date.now()+3600e3).toISOString()}}}}))""" % json.dumps(CONFIG))
+        await page.evaluate("window.__calls.length = 0")
+        await page.evaluate(sr + ".querySelector('[data-action=toggle-force]').click()")
+        check("arrêt de la marche forcée : immédiat, sans confirmation", await page.evaluate("window.__calls.length") == 1)
+        await page.evaluate("mount(%s, makeHass())" % json.dumps(CONFIG))
+        await page.evaluate(sr + ".querySelector('[data-action=toggle-force]').click()")
+        await page.screenshot(path=str(ROOT.parent / "docs" / "screenshot-confirm.png"), clip={"x":0,"y":0,"width":480,"height":620})
 
         # 4. Chauffe + marche forcée active avec compte à rebours
         await page.evaluate("""() => {

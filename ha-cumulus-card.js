@@ -24,6 +24,7 @@ const CUMULUS_DEFAULTS = {
   tempo_tomorrow: "sensor.myelectricaldata_tempo_tomorrow",
   automation: "automation.gestion_cumulus_tempo_rte_dev",
   force_duration: 3, // heures, si le timer n'expose pas sa durée
+  confirm_force: true, // demande une confirmation avant de lancer la marche forcée
   schedule_start: "22:01",
   schedule_end: "06:00",
   schedule_parity: 0, // 0 : nuits dont le quantième ordinal est pair (comme l'automatisation)
@@ -51,6 +52,9 @@ const CUMULUS_I18N = {
     power: "Puissance", voltage: "Tension", current: "Courant", energy: "Énergie",
     force: "Marche forcée", force_on: "Active", force_off: "Désactivée",
     force_hint: "{d} h max, puis retour au programme",
+    confirm_title: "Lancer la marche forcée ?",
+    confirm_text: "Le cumulus chauffera pendant {d} h, même en heures pleines.",
+    confirm: "Confirmer", cancel: "Annuler",
     remaining: "restant", paused: "En pause",
     costs: "Coûts", day: "Jour", month: "Mois", cycle: "Cycle",
     last_heat: "Dernière chauffe", next_heat: "Prochaine chauffe",
@@ -67,6 +71,9 @@ const CUMULUS_I18N = {
     power: "Power", voltage: "Voltage", current: "Current", energy: "Energy",
     force: "Boost", force_on: "On", force_off: "Off",
     force_hint: "{d} h max, then back to schedule",
+    confirm_title: "Start the boost?",
+    confirm_text: "The water heater will run for {d} h, even at peak hours.",
+    confirm: "Confirm", cancel: "Cancel",
     remaining: "left", paused: "Paused",
     costs: "Costs", day: "Day", month: "Month", cycle: "Cycle",
     last_heat: "Last heating", next_heat: "Next heating",
@@ -211,6 +218,8 @@ class CumulusCard extends HTMLElement {
     this._signature = "";
     this._tick = null;
     this._ready = false;
+    this._confirming = false;
+    this._confirmTimer = null;
   }
 
   static getConfigElement() {
@@ -402,8 +411,36 @@ class CumulusCard extends HTMLElement {
   _toggleForce() {
     const id = this._config.force_boolean;
     if (!id || !this._hass) return;
+    const active = this._stateObj("force_boolean")?.state === "on";
+    // Lancer la marche forcée demande une confirmation ; l'arrêter est immédiat.
+    if (!active && this._config.confirm_force !== false) {
+      this._askConfirm();
+      return;
+    }
+    this._callForce(id);
+  }
+
+  _callForce(id) {
     // L'automatisation « fin de la marche forcée » démarre / annule le timer.
     this._hass.callService("input_boolean", "toggle", { entity_id: id });
+  }
+
+  _askConfirm() {
+    this._confirming = true;
+    clearTimeout(this._confirmTimer);
+    // Annulation automatique : une confirmation oubliée ne reste pas ouverte.
+    this._confirmTimer = setTimeout(() => this._endConfirm(), 10000);
+    this._signature = "";
+    this._render();
+  }
+
+  _endConfirm() {
+    clearTimeout(this._confirmTimer);
+    this._confirmTimer = null;
+    if (!this._confirming) return;
+    this._confirming = false;
+    this._signature = "";
+    this._render();
   }
 
   _onClick(ev) {
@@ -412,6 +449,13 @@ class CumulusCard extends HTMLElement {
       if (!node.dataset) continue;
       if (node.dataset.action === "toggle-switch") { this._toggleSwitch(); return; }
       if (node.dataset.action === "toggle-force") { this._toggleForce(); return; }
+      if (node.dataset.action === "confirm-force") {
+        const id = this._config.force_boolean;
+        this._endConfirm();
+        if (id && this._hass) this._callForce(id);
+        return;
+      }
+      if (node.dataset.action === "cancel-force") { this._endConfirm(); return; }
       if (node.dataset.entity) { this._moreInfo(node.dataset.entity); return; }
     }
   }
@@ -494,6 +538,18 @@ class CumulusCard extends HTMLElement {
       detail = cumulusEscape(detail);
     }
     const unavailable = !boolState || boolState.state === "unavailable";
+    if (active || unavailable) this._confirming = false;
+    if (this._confirming) {
+      const hours = this._numberFormat(this._timerTotal() / 3600, 1);
+      return `<section class="force confirm" role="alertdialog" aria-label="${cumulusEscape(this._t("confirm_title"))}">
+        <div class="force-title">${cumulusIcon("timer", 18)}<span>${cumulusEscape(this._t("confirm_title"))}</span></div>
+        <div class="force-detail">${cumulusEscape(this._t("confirm_text", { d: hours }))}</div>
+        <div class="confirm-actions">
+          <button class="btn" data-action="cancel-force">${cumulusEscape(this._t("cancel"))}</button>
+          <button class="btn primary" data-action="confirm-force">${cumulusEscape(this._t("confirm"))}</button>
+        </div>
+      </section>`;
+    }
     return `<section class="force ${active ? "active" : ""}">
       <div class="force-row">
         <div class="force-info" data-entity="${cumulusEscape(this._config.force_timer || this._config.force_boolean)}">
@@ -602,6 +658,12 @@ class CumulusCard extends HTMLElement {
       .tile-value small { margin-left: 3px; font-size: 0.75rem; font-weight: 400; color: var(--secondary-text-color); }
       .force { background: var(--secondary-background-color, rgba(127,127,127,.12)); border-radius: 12px; padding: 12px; }
       .force.active { box-shadow: inset 0 0 0 2px var(--warning-color, #ff9800); }
+      .force.confirm { box-shadow: inset 0 0 0 2px var(--warning-color, #ff9800); }
+      .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+      .btn { padding: 8px 16px; border-radius: 18px; border: 1px solid var(--divider-color, #ccc); background: transparent;
+        color: var(--primary-text-color); cursor: pointer; font-weight: 500; }
+      .btn:hover { border-color: var(--primary-color); }
+      .btn.primary { background: var(--warning-color, #ff9800); border-color: var(--warning-color, #ff9800); color: #fff; }
       .force-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
       .force-info { cursor: pointer; min-width: 0; }
       .force-title { display: flex; align-items: center; gap: 6px; font-weight: 500; color: var(--primary-text-color); }
@@ -675,6 +737,7 @@ class CumulusCardEditor extends HTMLElement {
           this._entity("force_boolean", ["input_boolean"]),
           this._entity("force_timer", ["timer"]),
           { name: "force_duration", selector: { number: { min: 0.5, max: 12, step: 0.5, unit_of_measurement: "h", mode: "box" } } },
+          { name: "confirm_force", selector: { boolean: {} } },
         ],
       },
       {
@@ -733,7 +796,7 @@ class CumulusCardEditor extends HTMLElement {
     return {
       name: "Nom", switch: "Cumulus (interrupteur)", power: "Puissance", voltage: "Tension", current: "Courant",
       energy: "Énergie", force_boolean: "Marche forcée (booléen)", force_timer: "Marche forcée (minuteur)",
-      force_duration: "Durée de la marche forcée", cost_day: "Coût du jour", cost_month: "Coût du mois",
+      force_duration: "Durée de la marche forcée", confirm_force: "Confirmer avant de lancer la marche forcée", cost_day: "Coût du jour", cost_month: "Coût du mois",
       cost_cycle: "Coût du cycle", last_heat: "Dernière chauffe", automation: "Automatisation Tempo",
       schedule_start: "Début de la plage", schedule_end: "Fin de la plage", schedule_parity: "Nuits de chauffe",
       tempo_today: "Tempo aujourd'hui", tempo_tomorrow: "Tempo demain",
