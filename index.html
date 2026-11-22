@@ -76,6 +76,14 @@
       </div>
 
       <div class="panel">
+        <h2>Options de la carte</h2>
+        <div class="btns">
+          <button class="b" id="confirm-opt" aria-pressed="true">Confirmation avant la marche forcée</button>
+        </div>
+        <p class="note">Correspond à <code>confirm_force</code> : activée par défaut, désactivable dans l'éditeur ou le YAML.</p>
+      </div>
+
+      <div class="panel">
         <h2>Couleurs Tempo</h2>
         <div class="btns" id="tempo">
           <span class="row-label">Aujourd'hui</span>
@@ -92,8 +100,9 @@
 
       <div class="panel">
         <h2>Essayez la carte</h2>
-        <p class="hint">Le bouton rond allume ou éteint le cumulus, et l'interrupteur « Marche forcée » lance ou annule le minuteur de 3 h,
-          comme avec l'automatisation décrite dans le README. Un clic sur une tuile ouvrirait normalement la fiche de l'entité :
+        <p class="hint">Le bouton rond allume ou éteint le cumulus. L'interrupteur « Marche forcée » demande d'abord une confirmation
+          (Confirmer / Annuler, annulation automatique après 10 s), puis lance le minuteur de 3 h comme avec l'automatisation décrite
+          dans le README ; l'arrêt est immédiat. Un clic sur une tuile ouvrirait normalement la fiche de l'entité :
           ici, il est affiché dans le journal ci-dessous.</p>
         <pre id="log">En attente d'une action…</pre>
       </div>
@@ -206,7 +215,8 @@ customElements.define("ha-card", class extends HTMLElement {
 
   /* ----------------------------- la carte ---------------------------- */
   const card = document.createElement("cumulus-card");
-  card.setConfig({ type: "custom:cumulus-card" });
+  const cardConfig = { type: "custom:cumulus-card", confirm_force: true };
+  card.setConfig(cardConfig);
   card.addEventListener("hass-more-info", (ev) => log(`more-info → ${ev.detail.entityId}`));
   $("#stage").appendChild(card);
 
@@ -259,6 +269,15 @@ customElements.define("ha-card", class extends HTMLElement {
       refresh();
     }
   }, 500);
+
+  /* ------------------------ option de confirmation ------------------------ */
+  const confirmBtn = $("#confirm-opt");
+  confirmBtn.addEventListener("click", () => {
+    cardConfig.confirm_force = !cardConfig.confirm_force;
+    confirmBtn.setAttribute("aria-pressed", String(cardConfig.confirm_force));
+    card.setConfig({ ...cardConfig });
+    log(`confirm_force : ${cardConfig.confirm_force}`);
+  });
 
   /* ------------------------------ thème ------------------------------ */
   const themeBtn = $("#theme");

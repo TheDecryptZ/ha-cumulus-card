@@ -63,6 +63,18 @@ with sync_playwright() as p:
     click_card(page, "[data-action=toggle-switch]")
     check("bouton rond : éteint le cumulus", "Arrêté" in txt(page))
 
+    # Option confirm_force
+    page.click('[data-scenario="off"]')
+    page.click("#confirm-opt")
+    click_card(page, "[data-action=toggle-force]")
+    t = txt(page)
+    check("option désactivée : lancement immédiat, sans confirmation", "Active" in t and "Lancer la marche forcée ?" not in t, t[:200])
+    page.click("#confirm-opt")
+    page.click('[data-scenario="off"]')
+    click_card(page, "[data-action=toggle-force]")
+    check("option réactivée : confirmation demandée", "Lancer la marche forcée ?" in txt(page))
+    click_card(page, "[data-action=cancel-force]")
+
     # Tempo
     page.click('[data-day="today"][data-color="RED"]')
     page.click('[data-day="tomorrow"][data-color="WHITE"]')
