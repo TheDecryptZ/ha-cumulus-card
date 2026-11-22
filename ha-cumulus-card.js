@@ -1,6 +1,6 @@
 /*!
  * Cumulus Card — carte Lovelace pour piloter et suivre un cumulus (chauffe-eau)
- * Licence MIT — https://github.com/ (voir README.md)
+ * Licence MIT — https://github.com/TheDecryptZ/ha-cumulus-card
  */
 const CUMULUS_CARD_VERSION = "1.0.0";
 
@@ -786,7 +786,7 @@ if (!window.customCards.some((c) => c.type === "cumulus-card")) {
     name: "Cumulus Card",
     description: "Pilotage et suivi d'un cumulus : état, marche forcée, coûts, prochaine chauffe et couleurs Tempo.",
     preview: true,
-    documentationURL: "https://github.com/",
+    documentationURL: "https://github.com/TheDecryptZ/ha-cumulus-card",
   });
 }
 

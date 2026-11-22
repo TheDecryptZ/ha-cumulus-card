@@ -1,6 +1,6 @@
 # Cumulus Card
 
-[![Validation HACS](https://github.com/OWNER/ha-cumulus-card/actions/workflows/validate.yml/badge.svg)](https://github.com/OWNER/ha-cumulus-card/actions/workflows/validate.yml)
+[![Validation HACS](https://github.com/TheDecryptZ/ha-cumulus-card/actions/workflows/validate.yml/badge.svg)](https://github.com/TheDecryptZ/ha-cumulus-card/actions/workflows/validate.yml)
 [![hacs_badge](https://img.shields.io/badge/HACS-Personnalisé-orange.svg)](https://hacs.xyz)
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 
